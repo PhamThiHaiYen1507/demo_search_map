@@ -53,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
 //Hàng đợi chức tập mở (đã sắp xếp theo độ dài đường đi từ bé đến lớn)
   final PriorityQueue<NodeData> queue =
       PriorityQueue((curr, next) => curr.distance.compareTo(next.distance));
-//List chứ tập đóng
+//List chứa tập đóng
   final List<String> previos = [];
 
   final List<NodeData> result = [];
@@ -69,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final scale = size.height / 392;
+    final scale = size.height / 387;
     final columns = (size.width / (4 * scale)).floor();
     final rows = (size.height / (4 * scale)).floor();
 
