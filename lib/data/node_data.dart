@@ -3,6 +3,7 @@ import 'package:vector_math/vector_math_64.dart';
 class NodeData {
   late final Vector2 fromNode;
   late final Vector2 toNode;
+  //Khai báo tập gamma (Các đỉnh kề của đỉnh đang được xét)
   late final List<NodeData> edges;
   NodeData? previosNode;
   double distance = 0;

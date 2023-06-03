@@ -50,9 +50,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final List<NodeData> nodes = [];
 
+//Hàng đợi chức tập mở (đã sắp xếp theo độ dài đường đi từ bé đến lớn)
   final PriorityQueue<NodeData> queue =
       PriorityQueue((curr, next) => curr.distance.compareTo(next.distance));
-
+//List chứ tập đóng
   final List<String> previos = [];
 
   final List<NodeData> result = [];
@@ -68,16 +69,22 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final columns = (size.width / 4).floor();
-    final rows = (size.height / 4).floor();
+    final scale = size.height / 392;
+    final columns = (size.width / (4 * scale)).floor();
+    final rows = (size.height / (4 * scale)).floor();
 
     return Scaffold(
       body: InteractiveViewer(
           minScale: 1,
           maxScale: 5,
           child: Stack(
+            alignment: Alignment.centerLeft,
             children: [
-              Image.asset('assets/map.png'),
+              Image.asset(
+                'assets/map.png',
+                // height: size.height,
+                // fit: BoxFit.none,
+              ),
               GestureDetector(
                 onDoubleTapDown: (details) {
                   if (fromNode == null) {
@@ -94,8 +101,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               final point =
                                   Vector2(column.toDouble(), row.toDouble());
                               return Container(
-                                width: 4,
-                                height: 4,
+                                width: (4 * scale),
+                                height: (4 * scale),
                                 color: point == fromNode?.fromNode
                                     ? Colors.red
                                     : point == toNode?.fromNode
@@ -122,16 +129,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               if (isSuccess)
-                ...result
-                    .map((e) => Positioned(
-                          child: Center(
-                            child: CustomPaint(
-                              size: const Size(300, 200),
-                              painter: LinePainter(e),
-                            ),
-                          ),
-                        ))
-                    .toList()
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  bottom: 0,
+                  right: 0,
+                  child: CustomPaint(
+                    painter: LinePainter(result, scale),
+                  ),
+                )
             ],
           )),
       floatingActionButton: Column(
@@ -166,75 +172,26 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
         ],
       ),
-      // floatingActionButton: Column(
-      //   mainAxisSize: MainAxisSize.min,
-      //   children: [
-      //     if (fromNode != null && toNode != null)
-      //       FloatingActionButton(
-      //         onPressed: () {
-      //           setState(() {
-      //             fromNode = null;
-      //             toNode = null;
-      //           });
-      //         },
-      //         child: const Icon(Icons.cancel),
-      //       ),
-      //     if (fromNode != null && toNode != null)
-      //       FloatingActionButton(
-      //         onPressed: () {
-      //           setState(() {
-      //             nodes.add(NodeData(fromNode!, toNode!));
-      //             nodes.add(NodeData(toNode!, fromNode!));
-      //             fromNode = null;
-      //             toNode = null;
-      //           });
-      //         },
-      //         child: const Text('x2'),
-      //       ),
-      //     FloatingActionButton(
-      //       onPressed: () {
-      //         if (fromNode != null && toNode == null) {
-      //           setState(() {
-      //             fromNode = null;
-      //             toNode = null;
-      //           });
-      //         } else if (fromNode != null && toNode != null) {
-      //           setState(() {
-      //             nodes.add(NodeData(fromNode!, toNode!));
-      //             fromNode = null;
-      //             toNode = null;
-      //           });
-      //         } else {
-      //           saveFile();
-      //         }
-      //       },
-      //       child: Icon(
-      //         fromNode != null && toNode == null
-      //             ? Icons.cancel
-      //             : fromNode != null && toNode != null
-      //                 ? Icons.check
-      //                 : Icons.save,
-      //       ),
-      //     ),
-      //   ],
-      // ),
     );
   }
 
   void selectFromNode(TapDownDetails details) {
+    final size = MediaQuery.of(context).size;
+    final scale = size.height / 392;
     final selectedFromNode = Vector2(
-        (details.localPosition.dx / 4).floor().toDouble(),
-        (details.localPosition.dy / 4).floor().toDouble());
-    print(fromNode);
+        (details.localPosition.dx / (4 * scale)).floor().toDouble(),
+        (details.localPosition.dy / (4 * scale)).floor().toDouble());
     setState(() {
       fromNode = findNearNode(selectedFromNode);
     });
   }
 
   void selectToNode(TapDownDetails details) {
+    final size = MediaQuery.of(context).size;
+    final scale = size.height / 392;
     final selectedToNode = Vector2(
-        (details.localPosition.dx / 4).floor().toDouble(),
-        (details.localPosition.dy / 4).floor().toDouble());
+        (details.localPosition.dx / (4 * scale)).floor().toDouble(),
+        (details.localPosition.dy / (4 * scale)).floor().toDouble());
 
     setState(() {
       toNode = findNearNode(selectedToNode);
@@ -252,24 +209,12 @@ class _MyHomePageState extends State<MyHomePage> {
     final dir = await getExternalStorageDirectory();
     if (dir != null) {
       final File file = File('${dir.path}/map_point.txt');
-      // log(json.encode(nodes.map((e) => e.toJson()).toList()));
       await file
           .writeAsString(json.encode(nodes.map((e) => e.toJson()).toList()));
-      // print('save success');
     }
   }
 
   Future<void> readFile() async {
-    // final dir = await getExternalStorageDirectory();
-    // if (dir != null) {
-    //   final File file = File('${dir.path}/map_point.txt');
-    //   if (!file.existsSync()) return;
-    //   final data = json.decode(await file.readAsString());
-    //   nodes.addAll((data as List).map((e) => NodeData.fromJson(e)));
-    //   setState(() {});
-    //   print('read success');
-    // }
-
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       nodes.addAll(mapPosition.map((e) => NodeData.fromJson(e)));
       setState(() {});
@@ -283,34 +228,25 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       isLoading = true;
     });
-
+    //Add đỉnh đã duyệt vào list
     previos.add(fromNode!.toString());
-    //thêm các đỉnh kề với fromNode
 
+    //thêm các đỉnh kề với fromNode
     final newList = getNodeFrom(fromNode!.fromNode);
     for (var edge in newList) {
       edge.distance = fromNode!.distance + edge.weight;
+      //Thêm vào tập đỉnh kề của đỉnh đang xét
       fromNode!.addEdge(edge);
     }
 
     queue.addAll(newList);
 
-    // print('============start==============');
-    // print(queue.toList().map((e) => e.toString()));
     while (queue.isNotEmpty) {
+      //Lấy ra đỉnh đầu tiên của hàng đợi (đỉnh có đường đi ngắn nhất)
       final currentNode = queue.removeFirst();
-      // print('============removeFirst==============');
-      // print(queue.toList().map((e) => e.toString()));
-
+      //Xét các đỉnh kề với currentNode
       final edges = addNode(currentNode);
-
-      // print('============getEdges==============');
-      // print(queue.toList().map((e) => e.toString()));
-      // print(edges.map((e) => e.toString()));
-
       queue.addAll(edges);
-      // print('============addEdges==============');
-      // print(queue.toList().map((e) => e.toString()));
 
       final targetNode = edges
           .firstWhereOrNull((element) => element.toNode == toNode!.fromNode);
@@ -370,19 +306,30 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class LinePainter extends CustomPainter {
-  final NodeData data;
+  final double scale;
+  final List<NodeData> data;
 
-  LinePainter(this.data);
+  LinePainter(this.data, this.scale);
   @override
   void paint(Canvas canvas, Size size) {
     var paint = Paint()
       ..color = Colors.teal
-      ..strokeWidth = 3;
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
 
-    Offset start = Offset(data.fromNode.x * 4, data.fromNode.y * 4);
-    Offset end = Offset(data.toNode.x * 4, data.toNode.y * 4);
+    final Path path = Path();
+    if (data.isNotEmpty) {
+      final first = data.first;
+      path.moveTo(first.fromNode.x * 4 * scale + 2 * scale,
+          (first.fromNode.y * 4 * scale) + 2 * scale);
+      for (int i = 1; i < data.length; i++) {
+        print(i);
+        path.lineTo(data[i].toNode.x * 4 * scale + 2 * scale,
+            data[i].toNode.y * 4 * scale + 2 * scale);
+      }
+    }
 
-    canvas.drawLine(start, end, paint);
+    canvas.drawPath(path, paint);
   }
 
   @override
