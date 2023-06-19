@@ -4,10 +4,10 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:map_position/data/node_data.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
-
 import 'map_position.dart';
 
 Future<void> main() async {
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -82,8 +82,6 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               Image.asset(
                 'assets/map.png',
-                // height: size.height,
-                // fit: BoxFit.none,
               ),
               GestureDetector(
                 onDoubleTapDown: (details) {
@@ -100,29 +98,59 @@ class _MyHomePageState extends State<MyHomePage> {
                             children: List.generate(columns, (column) {
                               final point =
                                   Vector2(column.toDouble(), row.toDouble());
-                              return Container(
-                                width: (4 * scale),
-                                height: (4 * scale),
-                                color: point == fromNode?.fromNode
-                                    ? Colors.red
-                                    : point == toNode?.fromNode
-                                        ? Colors.amber
-                                        : Colors.transparent,
-                                // decoration: BoxDecoration(
-                                //     border: Border.all(
-                                //         width: 0.1,
-                                //         color: Colors.red.withOpacity(0.3)),
-                                //     color: fromNode != null && fromNode == point
-                                //         ? Colors.red
-                                //         : toNode != null && toNode == point
-                                //             ? Colors.amber
-                                //             : nodes.firstWhereOrNull(
-                                //                         (element) =>
-                                //                             element.fromNode ==
-                                //                             point) !=
-                                //                     null
-                                //                 ? Colors.green
-                                //                 : null),
+                              return Stack(
+                                alignment: Alignment.center,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Container(
+                                    width: (4 * scale),
+                                    height: (4 * scale),
+                                    color: point == fromNode?.fromNode
+                                        ? Colors.red
+                                        : point == toNode?.fromNode
+                                            ? Colors.amber
+                                            : Colors.transparent,
+                                    // decoration: BoxDecoration(
+                                    //     border: Border.all(
+                                    //         width: 0.1,
+                                    //         color: Colors.red.withOpacity(0.3)),
+                                    //     color: fromNode != null && fromNode == point
+                                    //         ? Colors.red
+                                    //         : toNode != null && toNode == point
+                                    //             ? Colors.amber
+                                    //             : nodes.firstWhereOrNull(
+                                    //                         (element) =>
+                                    //                             element.fromNode ==
+                                    //                             point) !=
+                                    //                     null
+                                    //                 ? Colors.green
+                                    //                 : null),
+                                  ),
+                                  if (point == fromNode?.fromNode)
+                                    Positioned(
+                                        left: -18,
+                                        top: -30,
+                                        child: Transform.rotate(
+                                          angle: 0,
+                                          child: const Icon(
+                                            Icons.boy,
+                                            size: 40,
+                                            color: Colors.brown,
+                                          ),
+                                        )),
+                                  if (point == toNode?.fromNode)
+                                    Positioned(
+                                        left: -13,
+                                        top: -26,
+                                        child: Transform.rotate(
+                                          angle: 0,
+                                          child: const Icon(
+                                            Icons.location_on_sharp,
+                                            size: 30,
+                                            color: Colors.red,
+                                          ),
+                                        ))
+                                ],
                               );
                             }),
                           )),
@@ -258,13 +286,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
           n = n.previosNode;
         }
-        print(result);
+
         result.add(NodeData(fromNode!.fromNode, result.last.fromNode));
         List<NodeData> result2 = result.reversed.toList();
         result2.add(NodeData(toNode!.fromNode, result2.last.toNode));
         result.clear();
         result.addAll(result2.reversed.toList());
         print(result);
+
         setState(() {
           isSuccess = true;
           isLoading = false;
@@ -272,11 +301,32 @@ class _MyHomePageState extends State<MyHomePage> {
 
         return;
       } else {
-        print('============không tìm thấy đường đi==============');
         setState(() {
           isLoading = false;
         });
       }
+    }
+
+    if (result.isEmpty) {
+      Get.rawSnackbar(
+          duration: const Duration(milliseconds: 1500),
+          margin: const EdgeInsets.only(left: 15, right: 15, top: 15),
+          snackPosition: SnackPosition.TOP,
+          borderRadius: 8,
+          animationDuration: const Duration(milliseconds: 300),
+          backgroundColor: Colors.red,
+          messageText: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Text(
+                'Không tìm thấy đường đi',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500),
+              ),
+            ],
+          ));
     }
   }
 
@@ -313,9 +363,9 @@ class LinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     var paint = Paint()
-      ..color = Colors.teal
+      ..color = Colors.blue
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+      ..strokeWidth = 3;
 
     final Path path = Path();
     if (data.isNotEmpty) {
@@ -323,7 +373,6 @@ class LinePainter extends CustomPainter {
       path.moveTo(first.fromNode.x * 4 * scale + 2 * scale,
           (first.fromNode.y * 4 * scale) + 2 * scale);
       for (int i = 1; i < data.length; i++) {
-        print(i);
         path.lineTo(data[i].toNode.x * 4 * scale + 2 * scale,
             data[i].toNode.y * 4 * scale + 2 * scale);
       }
